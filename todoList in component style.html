@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Todo List</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+
+<body>
+    <section class="todoapp">
+        <my-todo></my-todo>
+    </section>
+    <script src="js/vue.js"></script>
+    <script>
+        Vue.directive('focus', {
+            update: function(el) {
+                el.focus();
+            }
+        })
+        var TodoHeader = {
+            data() {
+                return {
+                    newTitle: ''
+                }
+            },
+            template: `
+              <header class="header">
+                  <h1>todos</h1>
+                  <input id="task" class="new-todo" placeholder="添加新任务" autofocus v-model='newTitle' @keyup.enter='addItem($event.target.value)'>
+              </header>
+            `,
+            methods: {
+                addItem(val) {
+                    this.$emit('my-addItem', val);
+                    this.newTitle = '';
+                }
+            }
+        }
+        var TodoMain = {
+            props: ['todos'],
+            template: `
+          <section class="main">
+              <ul class="todo-list" id="todo-list">
+                  <!-- li默认是未完成状态
+          li的类名如果设置为completed，则是完成状态 -->
+                  <li v-for='item in todos' :key='item.id' :class="{completed:item.completed, editing: isEdit == item.id}">
+                      <div class="view">
+                          <input class="toggle" type="checkbox" :checked='item.completed' @change='$emit("my-changeStatus", item.id)'>
+                          <label  @dblclick='toEdit(item.id)'>{{item.title}}</label>
+                          <button class="destroy" @click='$emit("my-del", item.id)'></button>
+                      </div>
+                      <input class="edit" :value="item.title" v-focus @blur='change(item.id, $event.target.value)'>
+                  </li>
+              </ul>
+          </section>
+        `,
+            data() {
+                return {
+                    isEdit: null
+                }
+            },
+            methods: {
+                toEdit(id) {
+                    this.isEdit = id;
+                },
+                change(id, val) {
+                    this.$emit('my-changeItem', id, val);
+                    this.isEdit = null;
+                }
+            }
+        }
+        var TodoFooter = {
+            props: ['todos'],
+            template: `
+            <footer class="footer">
+                <span class="todo-count"><strong>{{count}}</strong> item left(未完成数量)</span>
+                <button class="clear-completed" @click='$emit("my-clear")'>Clear completed(清除所有已完成)</button>
+            </footer>
+          `,
+            computed: {
+                count() {
+                    return num = this.todos.filter(item => item.completed == false).length;
+                }
+            }
+        }
+        Vue.component('my-todo', {
+            data() {
+                return {
+                    todos: [{
+                        id: 1,
+                        title: '吃饭',
+                        completed: false
+                    }, {
+                        id: 2,
+                        title: '睡觉',
+                        completed: false
+                    }, {
+                        id: 3,
+                        title: '打豆豆',
+                        completed: true
+                    }]
+                }
+            },
+            template: `
+              <div>
+                <todo-header @my-addItem='addItem'></todo-header>
+                <todo-main :todos='todos' @my-del='del' @my-changeStatus='changeStatus' @my-changeItem='changeItem'></todo-main>
+                <todo-footer :todos='todos' @my-clear='clear'></todo-footer>
+              </div>
+              `,
+            components: {
+                'todo-header': TodoHeader,
+                'todo-main': TodoMain,
+                'todo-footer': TodoFooter,
+            },
+            methods: {
+                addItem(val) {
+                    var id = this.todos[this.todos.length - 1].id + 1;
+                    var obj = {
+                        id: id,
+                        title: val,
+                        completed: false
+                    };
+                    this.todos.push(obj);
+                },
+                clear() {
+                    this.todos = this.todos.filter(item => item.completed == false);
+                },
+                del(id) {
+                    var index = this.todos.find(item => item.id == id);
+                    this.todos.splice(index, 1);
+                },
+                changeStatus(id) {
+                    var item = this.todos.find(item => item.id == id);
+                    item.completed = !item.completed;
+                },
+                changeItem(id, val) {
+                    var item = this.todos.find(item => item.id == id);
+                    item.title = val;
+                }
+            }
+        })
+        new Vue({
+            el: ".todoapp",
+            data: {
+
+            }
+        })
+    </script>
+</body>
+
+</html>
